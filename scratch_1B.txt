@@ -1,0 +1,65 @@
+--- CELL START ---
+for ticker in tickers:
+    for tf in timeframes:
+        period = tf['period']
+        interval = tf['interval']
+        config_key = (ticker, period, interval)
+        
+        if config_key in processed_configs:
+            print(f"⏭️ Omitiendo {ticker} [{period} | {interval}] - Ya existe en la base de datos.")
+            continue
+            
+        print(f"\n🚀 Iniciando simulación para {ticker} [{period} | {interval}]...")
+        
+        # --- DESCARGA CON PROTECCIÓN ---
+        try:
+            df_mercado = MarketLoader.load_ticker_data(ticker, period=period, interval=interval)
+        except Exception as e:
+            print(f"❌ Error descargando datos para {ticker} ({period}/{interval}): {e}")
+            continue
+            
+        total_velas = len(df_mercado)
+        if total_velas < 200:
+            print(f"⚠️ Omitiendo {ticker} [{period} | {interval}]: Historial demasiado corto ({total_velas} velas).")
+            continue
+            
+        # --- LÓGICA DE SALTOS DINÁMICOS ---
+        # Evita que 1 hora sature el procesador con miles de iteraciones redundantes
+        SALTO = 150 if interval == '1h' else 20
+        VENTANA_INICIAL = 150
+        HORIZONTE = 150
+        BLOQUES = 15
+        
+        print(f"   ► Velas Disponibles: {total_velas} | Salto Iterativo: {SALTO} | Predicción a Ciegas: {HORIZONTE}")
+        
+        # Instanciamos el Motor (Modo Financiero Riguroso: Log-Retornos)
+        evaluador = WalkForwardEvaluator(df_mercado, disable_norm=False, disable_returns=False)
+        
+        try:
+            # Ejecutar el Auto-Tuner Iterativo en el tiempo
+            df_resultados = evaluador.run(initial_window=VENTANA_INICIAL, stride=SALTO, horizon=HORIZONTE, blocks=BLOQUES)
+            
+            # Extraer resultados brutos (Incluyendo fallas extremas para ser estadísticamente honestos)
+            df_guardar = df_resultados.copy()
+            
+            # INYECCIÓN DE METADATOS PARA EL FUTURO QUERY NOTEBOOK
+            df_guardar.insert(0, 'Total_Velas_Disponible', total_velas)
+            df_guardar.insert(0, 'Intervalo_Velas', interval)
+            df_guardar.insert(0, 'Periodo_Historia', period)
+            df_guardar.insert(0, 'Ticker', ticker)
+            
+            # Checkpoint Progressivo al CSV
+            file_exists = os.path.isfile(db_path)
+            df_guardar.to_csv(db_path, mode='a', header=not file_exists, index=False)
+            
+            print(f"✅ Éxito. Guardadas {len(df_guardar)} iteraciones para {ticker} en {db_path}.")
+            
+            # Registrar para que no se repita en caso de caída posterior en este mismo loop
+            processed_configs.add(config_key)
+            
+            # Breve pausa para limpiar I/O
+            time.sleep(1)
+            
+        except Exception as e:
+            print(f"❌ Error matemático/sistémico durante el Backtest de {ticker}: {e}")
+            continue
