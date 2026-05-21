@@ -295,6 +295,59 @@ class QuantDashboard:
 
         st.plotly_chart(fig, use_container_width=True)
 
+        # --- NUEVO PANEL: DINÁMICA DE FUERZAS (DERIVADAS DEL SPLINE) ---
+        st.markdown("### 🔍 Dinámica Newtoniana del Capital (Física del Spline)")
+        
+        var_name = 'P' if disable_returns else 'r'
+        
+        fig_derivatives = make_subplots(
+            rows=2, cols=1,
+            shared_xaxes=True,
+            vertical_spacing=0.10,
+            subplot_titles=(f"Primera Derivada (Velocidad / Momentum) - d{var_name}/dt", 
+                            f"Segunda Derivada (Aceleración / Fuerza Neta) - d²{var_name}/dt²")
+        )
+        
+        # 1. Primera Derivada Trace (Velocidad)
+        fig_derivatives.add_trace(go.Scatter(
+            x=t, y=r_dot,
+            mode='lines',
+            name=f'Velocidad (d{var_name}/dt)',
+            line=dict(color='#00ffcc', width=2)
+        ), row=1, col=1)
+        
+        # Línea de referencia cero en velocidad
+        fig_derivatives.add_hline(y=0.0, line_dash="dash", line_color="rgba(255, 255, 255, 0.3)", row=1, col=1)
+        
+        # 2. Segunda Derivada Trace (Aceleración)
+        fig_derivatives.add_trace(go.Scatter(
+            x=t, y=r_dot2,
+            mode='lines',
+            name=f'Aceleración (d²{var_name}/dt²)',
+            line=dict(color='#ff9900', width=2)
+        ), row=2, col=1)
+        
+        # Línea de referencia cero en aceleración
+        fig_derivatives.add_hline(y=0.0, line_dash="dash", line_color="rgba(255, 255, 255, 0.3)", row=2, col=1)
+        
+        # Añadir Muros CUSUM para correlación de quiebres en ambos gráficos de derivadas
+        for trigger_idx in cusum_triggers:
+            fig_derivatives.add_vline(x=t[trigger_idx], line_dash="dash", line_color="rgba(255, 255, 0, 0.4)", row=1, col=1)
+            fig_derivatives.add_vline(x=t[trigger_idx], line_dash="dash", line_color="rgba(255, 255, 0, 0.4)", row=2, col=1)
+            
+        fig_derivatives.update_layout(
+            height=500,
+            template="plotly_dark",
+            margin=dict(l=20, r=20, t=30, b=20),
+            showlegend=False
+        )
+        
+        fig_derivatives.update_xaxes(title_text="Tiempo (t)", row=2, col=1)
+        fig_derivatives.update_yaxes(title_text=f"d{var_name}/dt", row=1, col=1)
+        fig_derivatives.update_yaxes(title_text=f"d²{var_name}/dt²", row=2, col=1)
+        
+        st.plotly_chart(fig_derivatives, use_container_width=True)
+
         # --- PANEL 3: CAJA BLANCA ---
         st.markdown("### 🧮 Ecuaciones de Momentum (SINDy)")
         var_name = 'P' if disable_returns else 'r'
