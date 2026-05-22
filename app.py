@@ -21,11 +21,22 @@ st.set_page_config(page_title="Kinetopus Engine", page_icon="🔭", layout="wide
 apply_custom_css()
 
 
-def run_quant_pipeline(df, smooth_tol, cusum_h, horizon_steps, cusum_k, disable_norm, disable_returns, poly_degree):
+def run_quant_pipeline(df, smooth_tol, cusum_h, horizon_steps, cusum_k, disable_norm, disable_returns, poly_degree, context_window):
     try:
         with st.spinner("1️⃣ Profiling y Sanitización (Regla 16GB)..."):
-             log_returns, volumen_z, precio_raw, dt_val = MarketLoader.prepare_quant_input(df, disable_norm=disable_norm, disable_returns=disable_returns)
-             t = np.arange(len(log_returns), dtype=np.float64) * dt_val
+             log_returns_full, vol_full, price_full, dt_val = MarketLoader.prepare_quant_input(df, disable_norm=disable_norm, disable_returns=disable_returns)
+             global_t = np.arange(len(log_returns_full), dtype=np.float64) * dt_val
+             
+             if context_window > 0 and len(log_returns_full) > context_window:
+                 log_returns = log_returns_full[-context_window:]
+                 volumen_z = vol_full[-context_window:]
+                 precio_raw = price_full[-context_window:]
+                 t = global_t[-context_window:]
+             else:
+                 log_returns = log_returns_full
+                 volumen_z = vol_full
+                 precio_raw = price_full
+                 t = global_t
              
         with st.spinner("2️⃣ Capa Sensor (FFT)..."):
              sensor = SpectralAnalyzer(top_k=2)
@@ -196,7 +207,9 @@ def run_quant_pipeline(df, smooth_tol, cusum_h, horizon_steps, cusum_k, disable_
              r_dot=r_dot,
              r_dot2=r_dot2,
              disable_returns=disable_returns,
-             analytical_solution=analytical_solution
+             analytical_solution=analytical_solution,
+             full_raw_price=price_full,
+             full_t=global_t
         )
 
     except Exception as e:
@@ -212,7 +225,7 @@ def render_quant_mode():
             
             col_t1, col_t2 = st.columns(2)
             with col_t1:
-                market_period = st.selectbox("Periodo Histórico:", ["1mo", "3mo", "6mo", "1y", "2y", "5y", "max"], index=3)
+                market_period = st.selectbox("Periodo Histórico:", ["1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "15y", "max"], index=5)
             with col_t2:
                 market_interval = st.selectbox("Resolución (Velas):", ["1h", "1d", "1wk", "1mo"], index=1)
                 
@@ -242,6 +255,7 @@ def render_quant_mode():
                          
     with col_config:
          st.markdown("⚙️ **Afinamiento Físico**")
+         context_window = st.slider("Ventana de Contexto (Velas)", 0, 5000, 1000, help="0 = Todo el historial. Limita las velas analizadas por los Splines para captar inercia reciente.")
          disable_returns = st.checkbox("Modo Física Clásica (Usar Precio Absoluto)", value=False, help="Bypass de Log Returns. Usa directamente P(t) - Ideal para Cinemática y Modelos Toy.")
          disable_norm = st.checkbox("Desactivar Normalización (Modo Calibración)", value=False, help="Procesa valores crudos para tests con modelos físicos perfectos (Toy Models).")
          horizon_steps = st.slider("Horizonte Predictivo (t+N) [Euler]", 1, 500, 60)
@@ -266,7 +280,7 @@ def render_quant_mode():
     if st.session_state['quant_df'] is not None:
          # Limpiar gráficos previos de Streamlit si lo amerita el diseño, pero rerun lo hace solo.
          st.divider()
-         run_quant_pipeline(st.session_state['quant_df'], smooth_tol, cusum_h, horizon_steps, cusum_k, disable_norm, disable_returns, poly_degree)
+         run_quant_pipeline(st.session_state['quant_df'], smooth_tol, cusum_h, horizon_steps, cusum_k, disable_norm, disable_returns, poly_degree, context_window)
 
 
 def main():

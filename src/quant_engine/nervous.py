@@ -62,22 +62,34 @@ class RegimeShiftDetector:
         # 1. Calcular el Error Físico
         residuo = real_values - model_values
         
-        # 2. Normalización Fundamental Z-Score 
-        # (Corrección del @BUILDER: Media global causa fugas del futuro al pasado.
-        # Asumimos que el modelo físico tiene media de error 0.
-        # Estimamos la desviación estándar usando diferencias para ser robustos a los quiebres estructurales).
+        # 2. Normalización Dinámica Z-Score (Control de Entropía Local - CUSUM Adaptativo)
+        # @BUILDER: El mercado es no-estacionario. Un sigma global promedia regímenes volátiles y calmos.
+        # Usamos un EWMA (Filtro Exponencial) de la varianza residual para escalar el z-score en tiempo real.
         diff_res = np.diff(residuo)
-        if len(diff_res) == 0:
-            sigma = 1e-8
-        else:
-            # np.std(diff) / sqrt(2) estima la std del ruido original ignorando step-shifts
-            sigma = np.std(diff_res) / np.sqrt(2) 
+        
+        sigma_dynamic = np.ones(n, dtype=np.float64) * 1e-8
+        if len(diff_res) > 0:
+            # Alpha para EWMA: Representa una memoria líquida de aprox 30 velas (zona de correlación corta)
+            alpha = 2.0 / (30.0 + 1.0)
             
-        if sigma < 1e-8:
-             z_scores = np.zeros_like(residuo) 
-        else:
-             # El modelo debería estar centrado, el residuo puro es la señal
-             z_scores = residuo / sigma
+            # Inicialización de la varianza usando las primeras velas
+            init_window = min(30, len(diff_res))
+            var_t = np.var(diff_res[:init_window]) / 2.0
+            if var_t < 1e-10:
+                var_t = 1e-10
+                
+            sigma_dynamic[0] = np.sqrt(var_t)
+            
+            # Evolución temporal termodinámica de la turbulencia
+            for i in range(1, n):
+                inst_var = (diff_res[i-1]**2) / 2.0
+                var_t = alpha * inst_var + (1.0 - alpha) * var_t
+                sigma_dynamic[i] = np.sqrt(var_t)
+                if sigma_dynamic[i] < 1e-8:
+                    sigma_dynamic[i] = 1e-8
+
+        # Z-Score Físico: El residuo se percibe más grave o más leve dependiendo de la tensión del sistema
+        z_scores = residuo / sigma_dynamic
 
         # 3. Reservar Memoria CUSUM Contigua
         S_pos = np.zeros(n, dtype=np.float64)

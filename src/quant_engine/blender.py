@@ -47,16 +47,39 @@ class ContinuousBlender:
         # Heurística de Suavizado Topológico (Fase 7 - Precisión Z-Score):
         # Como y ahora tiene Varianza 1.0 (Normalizado), `s` representa la suma de los errores 
         # cuadrados permitidos frente a la varianza unitaria.
-        # len(y) * tol obliga a que el spline ignore tolerablemente el ruido estocástico local.
         if len(dominant_periods) > 0:
             primary_period = np.max(dominant_periods)
-            # El periodo primario atenúa si el mercado obedece ciclos largos
             s = primary_period * len(y) * self.tol * 0.1 
         else:
             s = len(y) * self.tol
 
+        # === MEMORIA LÍQUIDA (Control Dinámico de Entropía) ===
+        # @BUILDER: En lugar de confiar ciegamente en todos los puntos por igual,
+        # detectamos la volatilidad local instantánea. Los puntos con alta turbulencia (ruido extremo)
+        # reciben un peso 'w' menor, obligando al Spline a ignorar el caos reciente y aferrarse a la inercia estructural.
+        diff_y = np.diff(y)
+        w = np.ones(len(y), dtype=np.float64)
+        
+        if len(diff_y) > 30:
+            alpha = 2.0 / (30.0 + 1.0)
+            var_t = np.var(diff_y[:30]) / 2.0
+            if var_t < 1e-10: var_t = 1e-10
+            
+            # La primera vela hereda el peso de la varianza inicial
+            w[0] = 1.0 / (np.sqrt(var_t) + 1e-6)
+            
+            for i in range(1, len(y)):
+                inst_var = (diff_y[i-1]**2) / 2.0
+                var_t = alpha * inst_var + (1.0 - alpha) * var_t
+                sigma_local = np.sqrt(var_t)
+                w[i] = 1.0 / (sigma_local + 1e-6)
+                
+            # Normalizar pesos para no distorsionar el factor 's' global asimétricamente
+            w = w / np.mean(w)
+
         try:
-            spline = UnivariateSpline(t, y, s=s, k=3)
+            # Se inyecta la memoria líquida a través del vector de pesos 'w'
+            spline = UnivariateSpline(t, y, w=w, s=s, k=3)
             self._models[feature_idx] = spline
             
             # Calcular Telemetría MSE

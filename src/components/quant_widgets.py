@@ -26,7 +26,9 @@ class QuantDashboard:
          r_dot: np.ndarray,
          r_dot2: np.ndarray,
          disable_returns: bool = False,
-         analytical_solution: str = None
+         analytical_solution: str = None,
+         full_raw_price: np.ndarray = None,
+         full_t: np.ndarray = None
     ):    
         st.markdown("### 🔭 Telemetría Físico-Predictiva")
         var_name = 'P' if disable_returns else 'r'
@@ -57,7 +59,17 @@ class QuantDashboard:
         )
 
         # --- PANEL 1: PRECIO E INERCIA (Fila 1, Col 1) ---
-        # Precio Crudo (Marcadores tenues)
+        # Historial Ignorado (Fuera de la Ventana de Contexto)
+        if full_raw_price is not None and full_t is not None:
+             fig.add_trace(go.Scatter(
+                 x=full_t, y=full_raw_price,
+                 mode='lines',
+                 name='Historial Ignorado (Contexto)',
+                 line=dict(color='rgba(255, 255, 255, 0.1)', width=1.5),
+                 showlegend=True
+             ), row=1, col=1)
+
+        # Precio Crudo (Ventana Activa - Marcadores tenues)
         fig.add_trace(go.Scatter(
             x=t, y=raw_price,
             mode='markers',

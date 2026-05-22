@@ -20,11 +20,12 @@ class WalkForwardEvaluator:
     Usa una Arquitectura Expanding Window con Auto-Tuning Direccional incorporado.
     """
     
-    def __init__(self, df: pd.DataFrame, disable_norm: bool = False, disable_returns: bool = False, tuner_type: str = 'cusum'):
+    def __init__(self, df: pd.DataFrame, disable_norm: bool = False, disable_returns: bool = False, tuner_type: str = 'cusum', context_window: int = 0):
         self.df = df
         self.disable_norm = disable_norm
         self.disable_returns = disable_returns
         self.tuner_type = tuner_type
+        self.context_window = context_window
 
     def run(self, initial_window: int = 150, stride: int = 20, horizon: int = 150, blocks: int = 15) -> pd.DataFrame:
         total_len = len(self.df)
@@ -33,11 +34,16 @@ class WalkForwardEvaluator:
         # El límite de parada asegura que el modelo no asuma el futuro que no existe (total_len - horizon)
         max_valid_start = total_len - horizon
         
-        print(f"Iniciando Walk-Forward (Ventana:{initial_window}, Salto:{stride}, Horizonte:{horizon} velas en {blocks} bloques)")
+        print(f"Iniciando Walk-Forward (Ventana:{initial_window}, Salto:{stride}, Horizonte:{horizon} velas en {blocks} bloques, Contexto:{self.context_window})")
         
         end_idx = initial_window
         while end_idx <= max_valid_start:
             df_slice = self.df.iloc[:end_idx].copy() # Expanding Window Estricta (El Pasado)
+            
+            # Truncamiento por ventana de contexto (Moving Window)
+            if self.context_window > 0 and len(df_slice) > self.context_window:
+                df_slice = df_slice.tail(self.context_window)
+                
             actual_prices = self.df.iloc[end_idx:end_idx+horizon]['Close'].values # El Futuro Oculto
             
             try:
