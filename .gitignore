@@ -21,5 +21,11 @@ Thumbs.db
 
 # Kinetopus specific
 .agent/
+.agents/
+tectonic_bin/
 archivos_de_testimg/
 *.png
+!docs/assets/*.png
+*.log
+*.exe
+*.bak

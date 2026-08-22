@@ -1,0 +1,285 @@
+﻿SINDy y Machine Learning Científico (SciML) en Finanzas Cuantitativas: Estado del Arte, Integración Estocástica, Filtros Racionales y Desafíos de No Estacionariedad
+1. Panorama General del Estado del Arte (SOTA)
+La aplicación de algoritmos de la familia de física matemática y aprendizaje automático científico (SciML) a los mercados financieros ha ganado una enorme tracción en la investigación de frontera. El algoritmo fundamental SINDy (Sparse Identification of Nonlinear Dynamics), propuesto originalmente por Steven L. Brunton, Joshua L. Proctor y J. Nathan Kutz (University of Washington), se basa en la premisa de que la mayoría de los sistemas físicos complejos están gobernados por dinámicas que son altamente parsimoniosas en un espacio de funciones candidatas. En finanzas cuantitativas, este enfoque rompe el paradigma de las "cajas negras" (como las redes neuronales profundas o los transformers) al buscar explícitamente ecuaciones diferenciales ordinarias (ODEs) o estocásticas (SDEs) interpretables que describan la evolución temporal de los precios, la volatilidad y los flujos microestructurales.
+
+
+
+
+
+
+
+
+                +---------------------------------------+
+               |     Datos Financieros Ruidosos        |
+               +---------------------------------------+
+                                   |
+                                   v
+               +---------------------------------------+
+               | Prony-AAA (Filtrado y Denoising)      |
+               +---------------------------------------+
+                                   |
+                 Obtención de Derivadas Analíticas Exactas
+                                   v
+               +---------------------------------------+
+               | Biblioteca de Candidatas Theta(X)      |  <-- KAN / Symbolic-KAN
+               +---------------------------------------+      (Sparsity & Inicialización)
+                                   |
+                      Solucionador de Regresión
+                                   v
+               +---------------------------------------+
+               |      Modelos de Ecuaciones SDE        |  <-- SSISDE (Aislamiento de
+               |        (Caja Blanca Descubierta)      |       Drift y Difusión)
+               +---------------------------------------+
+
+Ecuación Fundamental de SINDy
+Dado un vector de estado dinámico $x(t) \in \mathbb{R}^d$, el sistema se modela como:
+
+
+$$\dot{x}(t) = f(x(t))$$
+SINDy construye una biblioteca de funciones candidatas $\Theta(X) \in \mathbb{R}^{M \times N}$, donde $X$ es la matriz de historia temporal del estado y $M$ es el número de puntos temporales. Las columnas de $\Theta(X)$ representan combinaciones no lineales de las variables de estado (ej. constantes, polinomios, funciones trigonométricas, términos racionales). El objetivo es resolver el sistema lineal sobredeterminado mediante un regresor que promueva la dispersión (sparsity):
+
+
+
+
+$$\dot{X} \approx \Theta(X)\Xi$$
+Donde $\Xi \in \mathbb{R}^{N \times d}$ es la matriz de coeficientes dispersos, en la cual la gran mayoría de las entradas son exactamente cero. Las filas no nulas de $\Xi$ determinan los términos activos de la ecuación diferencial gobernante descubierta.
+
+
+Autores, Laboratorios e Instituciones Líderes
+* The Brunton & Kutz Research Group (University of Washington): Steven Brunton y Nathan Kutz continúan liderando el desarrollo metodológico global de SINDy y sus variantes avanzadas (como SINDy-PI y SINDy-SHRED).
+
+* Mathematical Institute (University of Oxford): Centrado en el análisis de aproximación racional adaptativa (AAA), análisis de operadores de Koopman y su aplicación en la reconstrucción de señales financieras con ruido extremo.
+
+* Laboratorios de Econofísica y Finanzas Cuantitativas: Grupos conjuntos en Princeton, ETH Zürich y la Universidad de Boston aplican este marco para deducir ecuaciones macroeconómicas complejas y dinámicas del libro de órdenes limitadas (LOB).
+Construcción y Optimización de la Biblioteca de Candidatas $\Theta(X)$
+El mayor desafío al incorporar variables macroeconómicas (tasas de interés, inflación) y microestructurales (desequilibrio del libro de órdenes, volumen transaccionado, spreads) es la explosión combinatoria de los términos de la biblioteca y la multicolinealidad inherente de las variables de mercado. Si $\Theta(X)$ contiene demasiadas características correlacionadas, los solucionadores de regresión dispersa se vuelven inestables y sufren de un severo sobreajuste.
+Para resolver esto, la literatura de vanguardia implementa las siguientes estrategias:
+   1. Reducción de Dimensionalidad Coordenada: Se aplican técnicas de proyección como Análisis de Componentes Principales (PCA), Descomposición en Modos Propios (POD) o Autoencoders profundos. SINDy se ejecuta sobre las coordenadas latentes de baja dimensión en lugar del espacio de mercado original.
+
+   2. Bibliotecas Jerárquicas Estructuradas: En lugar de generar todas las combinaciones polinómicas posibles, se construyen bibliotecas "físicamente realistas" guiadas por principios económicos (como restricciones de no-arbitraje y homogeneidad dimensional en economía), limitando los polinomios a un orden máximo (típicamente de grado 2 o 3) y excluyendo interacciones cruzadas de variables sin sentido causal.
+   3. Regularización de Características (Feature Screening): Métodos de filtrado basados en correlación de distancia no lineal y teoría de la información (información mutua) descartan términos de la biblioteca antes de iniciar la regresión dispersa.
+Solucionadores de Regresión Dispersa ante Datos Ruidosos
+El rendimiento y la estabilidad de SINDy dependen del optimizador utilizado para calcular la matriz $\Xi$:
+Solucionador
+	Mecanismo de Regularización
+	Robustez al Ruido
+	Estabilidad Financiera
+	STLSQ (Sequentially Thresholded Least Squares)
+	Mínimos cuadrados recursivos con umbral estricto $\lambda$
+	Baja
+	Media (falla ante colinealidad severa)
+	LASSO ($L_1$-regularization)
+	Penalización convexa $L_1$ sobre los coeficientes $\Xi$
+	Media
+	Baja (tiende a seleccionar arbitrariamente una sola variable correlacionada)
+	SR3 (Sparse Relaxed Regularized Regression)
+	Optimización alternada mediante variables de división
+	Alta
+	Alta (permite incorporar restricciones matemáticas duras de estabilidad)
+	El algoritmo SR3 destaca en finanzas porque desacopla el término de pérdida por desajuste de datos de la penalización de dispersión mediante un término de relajación cuadrática, lo que evita que los coeficientes oscilen violentamente ante pequeñas perturbaciones de ruido en la serie temporal.
+2. Variantes Avanzadas para Entornos de Bajo SNR (Relación Señal/Ruido)
+Los mercados reales operan en regímenes de bajo SNR, donde el ruido del microordenador y la volatilidad estocástica eclipsan la señal subyacente. Las variantes tradicionales de SINDy fallan catastróficamente bajo estas condiciones porque requieren calcular numéricamente las derivadas temporales $\dot{X}$, un proceso que amplifica enormemente el ruido de alta frecuencia.
+
+
+
+
+
+
+
+
+                     +---------------------------------------+
+                    |      Serie Temporal Financiera        |
+                    +---------------------------------------+
+                                        |
+              +-------------------------+-------------------------+
+              |                                                   |
+              v                                                   v
++-----------------------------+                     +-----------------------------+
+|    Enfoque Débil (WSINDy)   |                     |     Enfoque Latente (SHRED)  |
++-----------------------------+                     +-----------------------------+
+| Proyecta sobre funciones de |                     | GRU codifica la trayectoria |
+| prueba analíticas.          |                     | temporal dispersa a un      |
+|                                                   | espacio latente parsimonioso|
+|   -\int X * \dot{\psi} dt   |                     | acotado por SINDy.          |
++-----------------------------+                     +-----------------------------+
+              |                                                   |
+              +-------------------------+-------------------------+
+                                        |
+                                        v
+                    +---------------------------------------+
+                    |    SINDy con Conformal Prediction     |
+                    +---------------------------------------+
+                    | Cuantificación de incertidumbre sin   |
+                    | supuestos gaussianos de cobertura.    |
+                    +---------------------------------------+
+
+Weak SINDy (WSINDy)
+Desarrollado para mitigar el problema de la diferenciación numérica, WSINDy formula las ecuaciones de movimiento en su forma débil (integral). En lugar de evaluar $\dot{x}(t)$ directamente, el algoritmo proyecta el sistema sobre un conjunto de funciones de prueba analíticas $\psi_k(t) \in C_c^\infty$ con soporte compacto en subintervalos temporales $[t_i, t_{i+1}]$:
+
+
+
+
+$$\int_{t_i}^{t_{i+1}} \dot{x}(t)\psi_k(t) dt = \int_{t_i}^{t_{i+1}} f(x(t))\psi_k(t) dt$$
+Aplicando integración por partes al miembro izquierdo, la derivada se transfiere completamente a la función de prueba analítica $\psi_k(t)$:
+
+
+
+
+$$-\int_{t_i}^{t_{i+1}} x(t)\dot{\psi}_k(t) dt = \int_{t_i}^{t_{i+1}} f(x(t))\psi_k(t) dt$$
+Dado que $\dot{\psi}_k(t)$ se calcula analíticamente de forma exacta, esta formulación elimina la necesidad de diferenciar numéricamente los datos ruidosos de mercado, logrando que el descubrimiento de ecuaciones sea robusto incluso en presencia de ruido blanco de alta intensidad.
+
+
+SINDy-PI (Parallel Implicit)
+Diseñado para identificar dinámicas implícitas de la forma $f(x, \dot{x}, t) = 0$ o términos racionales no lineales de tipo Padé:
+
+
+
+
+$$\dot{x}(t) = \frac{P(x(t))}{Q(x(t))}$$
+SINDy-PI reformula el problema de optimización en paralelo. Evalúa cada función de la biblioteca $\Theta(X, \dot{X})$ (incluyendo términos que contienen $\dot{X}$) como una posible variable dependiente frente al resto de la biblioteca. Para trading, esto permite descubrir relaciones de impacto de mercado donde el cambio en el precio depende de forma implícita y no lineal del desequilibrio del libro de órdenes:
+
+
+
+
+$$\dot{P} \propto \frac{\alpha \cdot \text{Imbalance}}{1 + \beta \cdot \text{Imbalance}}$$
+Ensemble-SINDy (E-SINDy) y Conformal Prediction
+E-SINDy es una técnica probabilística que combina la identificación dispersa con bootstraping. Se extraen submuestras aleatorias (tanto en el tiempo como en las características) de los datos de mercado y se ejecuta SINDy cientos de veces. Esto genera distribuciones empíricas para cada coeficiente de la matriz $\Xi$, permitiendo evaluar la estabilidad de cada término.
+
+
+En los últimos años, E-SINDy se ha integrado formalmente con Conformal Prediction (Fasel, 2025/2026). Esta fusión permite construir intervalos de predicción temporal con garantías matemáticas de cobertura bajo el único supuesto de intercambiabilidad de los datos (data exchangeability). A través de la calibración de un residuo conforme no simétrico sobre datos históricos, se pueden generar umbrales dinámicos de riesgo de trading (Value at Risk analítico y no paramétrico) que capturan fielmente colas anchas y perturbaciones no gaussianas sin recurrir a modelos de volatilidad restrictivos.
+
+
+SINDy-SHRED (Shallow Recurrent Decoders)
+SINDy-SHRED, una arquitectura de frontera publicada en PNAS (2025/2026), resuelve el problema de la identificación de dinámicas a partir de sensores temporales extremadamente dispersos. El modelo utiliza una red de Unidades Recurrentes de Compuerta (GRU) para procesar una secuencia temporal de mediciones de unos pocos activos altamente líquidos ("sensores de mercado") y proyectar esta información en un espacio de estado latente.
+
+
+Una red decodificadora ligera reconstruye entonces el campo macroestructural completo de los mercados. La innovación clave de SINDy-SHRED radica en imponer una regularización de pérdida basada en SINDy sobre el espacio latente de la GRU. Esto obliga a la dinámica latente a converger progresivamente a un sistema dinámico interpretable y parsimonioso:
+
+
+
+
+$$\dot{z}(t) = \Theta(z(t))\Xi_{latent}$$
+En el trading cuantitativo, esto permite utilizar la liquidez de tres o cuatro activos clave para descubrir las dinámicas analíticas subyacentes que gobiernan decenas de activos ilíquidos en el mismo sector.
+
+
+3. Integración en Paradigmas Más Complejos
+SINDy ha dejado de ser un algoritmo aislado; en la actualidad, constituye el núcleo de arquitecturas híbridas de aprendizaje científico que fusionan la teoría de operadores, el cálculo estocástico de Itô y el aprendizaje profundo no lineal.
+Teoría de Operadores de Koopman y DMD (Dynamic Mode Decomposition)
+La teoría de Koopman permite analizar sistemas dinámicos no lineales mediante un operador lineal infinito-dimensional $\mathcal{K}$ que actúa sobre el espacio de funciones observables del sistema. SINDy opera como un motor de búsqueda automatizado para encontrar las coordenadas de Koopman ideales.
+
+
+En lugar de aplicar DMD sobre el precio bruto $x(t)$, SINDy identifica el conjunto mínimo de funciones no lineales en la biblioteca $\Theta(X)$ que permiten linealizar la evolución temporal del mercado en el espacio de Hilbert. Esto permite modelar sistemas de trading complejos mediante matrices de transferencia lineal clásicas de dimensión finita, facilitando la optimización de carteras en tiempo real con técnicas de control lineal estables.
+
+
+Descubrimiento de SDEs de Trayectoria Única (Algoritmo SSISDE)
+La modelización tradicional de SDEs en finanzas (como el modelo de volatilidad de Heston o el proceso de Cox-Ingersoll-Ross) asume propiedades de ergodicidad o requiere simular múltiples trayectorias para calibrar parámetros. El algoritmo SSISDE (Sparse Identification of Stochastic Differential Equations) (Ali, Das, Feng, Gao, Lin, 2025/2026) supera esta limitación histórica, permitiendo identificar términos de deriva y difusión a partir de una única trayectoria observada sin supuestos de ergodicidad o estacionariedad.
+
+
+Para un proceso estocástico $X_t$ que evoluciona bajo la SDE:
+
+
+$$dX_t = \mu(X_t)dt + \sigma(X_t)dW_t$$
+El algoritmo SSISDE opera mediante tres fases analíticas rigurosas:
+
+
+      1. Aislamiento de la Difusión por Variación Cuadrática Local: Se calcula la variación cuadrática del camino $X_t$ para eliminar la influencia de la deriva $\mu(X_t)$ y el término browniano. La función de difusión $\sigma(x)$ se aproxima localmente en una grilla discreta de tiempo con paso $\Delta t$:
+
+$$\sigma^2(X_{t_i}) \approx \frac{1}{\Delta t} (X_{t_{i+1}} - X_{t_i})^2$$
+A partir de estos valores estimados, se realiza una regresión simbólica dispersa con SINDy para hallar la estructura matemática exacta de la función de difusión $\sigma(x)$.
+
+      2. Transformación de Girsanov y Medida de Martingala $\mathbb{Q}$: Se define una medida de probabilidad equivalente $\mathbb{Q}$ (medida de riesgo-neutro) bajo la cual el término de deriva $\mu(X_t)$ se neutraliza, haciendo que el proceso sea una martingala local. Bajo esta "lente" matemática, el ruido browniano adaptado $B^\mathbb{Q}$ puede ser extraído de manera precisa:
+
+$$dX_t = -\frac{1}{2}\sigma(X_t)\sigma'(X_t)dt + \sigma(X_t) \circ dB_t^\mathbb{Q}$$
+Donde $\circ$ denota la integral estocástica de Stratonovich. Esto permite aislar y calcular analíticamente los incrementos del movimiento browniano a partir de los datos históricos de una sola trayectoria.
+
+      3. Expansión de Taylor Estocástica de Orden Dos: Se aplica una expansión de Taylor para aproximar el término de deriva $\mu(X_{t_i})$. Utilizando las integrales iteradas de Stratonovich calculadas en el paso anterior, se construye un estimador insesgado de la deriva libre del sesgo introducido por el ruido estocástico. Finalmente, SINDy procesa estos estimadores para descubrir la forma funcional parsimoniosa de $\mu(x)$.
+
+Sinergias con Redes de Kolmogorov-Arnold (KAN / SINDy-KAN)
+Las Redes de Kolmogorov-Arnold (KAN), inspiradas en el teorema de representación de Kolmogorov-Arnold, sustituyen los pesos lineales fijos de los perceptrones multicapa (MLPs) por funciones de activación univariables parametrizadas (normalmente B-splines) en las aristas de la red.
+
+
+En 2026, el paradigma híbrido SINDy-KAN y las Symbolic-KANs han surgido para resolver la inicialización de las bibliotecas de SINDy. En lugar de definir una biblioteca estática $\Theta$ que sufra explosión combinatoria, se entrena una KAN profunda para modelar la dinámica del mercado. Durante el entrenamiento, las splines adaptativas de la KAN aprenden de manera óptima las formas de las activaciones univariables necesarias para minimizar la pérdida.
+
+
+Posteriormente, se ejecuta un algoritmo de regresión simbólica local (o symbolification) sobre cada una de las aristas de la KAN entrenada. Esto permite extraer de forma dinámica e informada por datos las componentes matemáticas analíticas más relevantes (ej. combinaciones exactas de exponenciales o logaritmos), las cuales inicializan de forma inmediata y robusta la biblioteca candidata $\Theta$ de SINDy, eliminando el sesgo de la selección manual de funciones.
+
+
+Filtro Prony-AAA como Front-End
+El algoritmo AAA (Adaptive Antoulas-Anderson) es el estándar de oro para la aproximación racional baricéntrica de funciones complejas en dominios discretos. Su combinación con el método clásico de Prony (Prony-AAA) permite aproximar una señal ruidosa mediante una suma óptima de exponenciales complejas amortiguadas, lo que equivale a mapear polos y ceros estables en el plano complejo:
+
+
+
+
+$$f(z) \approx \sum_{j=1}^m \frac{w_j f(z_j)}{z - z_j} \Big/ \sum_{j=1}^m \frac{w_j}{z - z_j}$$
+Donde $z_j$ son los puntos de soporte seleccionados dinámicamente de forma codiciosa (greedy) para evitar inestabilidades numéricas, y $w_j$ son los pesos baricéntricos.
+
+
+En el trading cuantitativo, el Filtro Prony-AAA actúa como un preprocesamiento (front-end) de denoising matemático de extrema fidelidad. Al ajustar de manera adaptativa la representación racional baricéntrica a la serie temporal de precios ruidosa, se eliminan las oscilaciones de alta frecuencia del ruido microestructural (Froissart doublets). Dado que el interpolante resultante es una función racional analítica y continua, se pueden calcular sus derivadas temporales exactas de manera puramente analítica (diferenciando la fórmula baricéntrica). Estas derivadas, totalmente libres del ruido inherente a las aproximaciones por diferencias finitas, son las que alimentan de manera limpia al regresor de SINDy.
+
+
+4. Cuellos de Botella Académicos y Resolución Práctica
+La traslación de algoritmos de SciML desde la física matemática (donde las leyes del universo son inmutables) a los mercados financieros (donde las reglas cambian dinámicamente debido al comportamiento estratégico de los participantes) presenta serios desafíos técnicos.
+
+
+
+
+
+
+       +--------------------------------------------------------+
+      | DESAFÍO: Cambio de Régimen y Alpha Decay Temporal      |
+      +--------------------------------------------------------+
+                                  |
+        +-------------------------+-------------------------+
+        |                                                   |
+        v                                                   v
++-----------------------------+                     +-----------------------------+
+|  TV-SINDy (Tiempo Variable) |                     |  HMM-SINDy (Multirrégimen)  |
++-----------------------------+                     +-----------------------------+
+| Coeficientes \Xi(t) varían   |                     | Modela el mercado como un   |
+| como funciones continuas    |                     | HMM con un sistema SINDy    |
+| (wavelets / splines).       |                     | diferente por estado.       |
++-----------------------------+                     +-----------------------------+
+
+Cambio de Régimen (Regime Switching) y Alpha Decay Temporal
+En física, la gravedad o la masa de un electrón son constantes. En finanzas, los coeficientes físicos descubiertos por SINDy (la matriz $\Xi$) experimentan desplazamientos de régimen y un decaimiento estructural continuo (alpha decay). Un sistema dinámico calibrado durante un mercado alcista de baja volatilidad perderá total validez al ingresar a un pánico de mercado con contracción de liquidez.
+
+
+Para resolver este problema, la literatura académica actual propone dos enfoques principales:
+         1. SINDy de Parámetros Variables en el Tiempo (TV-SINDy):
+En lugar de tratar a $\Xi$ como una matriz constante, los coeficientes se modelan como funciones continuas del tiempo $\Xi(t)$. Se expanden en una base funcional temporal de dimensión baja (como wavelets de Haar o splines cúbicas de baja frecuencia):
+$$\Xi(t) = \sum_{k=1}^K c_k \phi_k(t)$$
+SINDy optimiza entonces los coeficientes estáticos $c_k$, permitiendo descubrir cómo se deslizan las constantes dinámicas de los precios a lo largo del tiempo.
+         2. SINDy con Conmutación de Regímenes (HMM-SINDy):
+Se integra un Modelo de Markov Oculto (HMM) con un conjunto de modelos SINDy. El mercado se asume gobernado por un conjunto discreto de $S$ estados latentes de volatilidad o tendencia. Cada régimen posee su propio conjunto parsimonioso de ecuaciones de caja blanca. Un algoritmo de Baum-Welch adaptado entrena simultáneamente las probabilidades de transición entre estados y las matrices de coeficientes dispersos $\Xi_s$ para cada régimen $s \in \{1, \dots, S\}$.
+Estrategias de Validación Temporal para Evitar Overfitting
+El riesgo de sobreajuste en sistemas de bajo SNR es masivo. Para garantizar la generalizabilidad fuera de muestra (OOS), se imponen rigurosos protocolos de validación:
+            * Walk-Forward secuencial con Recalibración Dinámica:
+No se permite el uso de validación cruzada aleatoria tradicional ($k$-fold), ya que viola la causalidad temporal y filtra información del futuro. Se utiliza un esquema de validación Walk-Forward con ventanas de entrenamiento deslizantes de tamaño $T_{train}$ (ej. 6 meses de datos de ticks), una ventana de validación intermedia $T_{val}$ para seleccionar el umbral óptimo de dispersión $\lambda$, y una ventana corta de prueba fuera de muestra $T_{test}$ (ej. 1 mes o incluso 1 semana), seguida de una recalibración completa de las ecuaciones del sistema.
+            * Frontera de Pareto Complejidad-Precisión: La selección final del modelo se realiza localizando el punto de inflexión ("codo") en la frontera de Pareto que contrasta la pérdida cuadrática fuera de muestra con el grado de parsimonia del modelo (el número de términos no nulos en $\Xi$). Se penaliza fuertemente la complejidad utilizando criterios de información modificados, tales como el Criterio de Información de Akaike para sistemas dinámicos (AIC-SINDy).
+
+5. Ecosistema de Software, Benchmarks y Repositorios
+Para implementar, evaluar y reproducir estas metodologías a nivel de producción en el presente año 2026, el ecosistema cuenta con robustos repositorios de código abierto y conjuntos de datos estandarizados.
+Repositorios de Código Abierto
+               * PySINDy: Desarrollado por el consorcio de la Universidad de Washington (Kutz y Brunton). Es la biblioteca oficial en Python para SINDy. Soporta solucionadores avanzados como STLSQ y SR3, ensemblado (E-SINDy), aproximaciones débiles (WSINDy) y diferenciación robusta mediante filtrado de Kalman optimizado.
+
+               * Chebfun: El software por excelencia (disponible en MATLAB y con interfaces activas en Python como pychebfun) para implementar el algoritmo AAA, interpolación baricéntrica y el cálculo de derivadas analíticas exactas libres de ruido.
+
+               * SINDy-KAN / Symbolic-KAN: Repositorios de GitHub de la comunidad SciML que implementan la sinergia de Kolmogorov-Arnold con regresión simbólica dispersa, permitiendo descubrir la inicialización óptima de las bibliotecas de candidatos.
+
+               * OpenFIM: Framework especializado en aprendizaje de dinámicas implícitas y operadores de Koopman para finanzas cuantitativas.
+Datasets de Benchmark Estándar en Finanzas
+                  * FI-2010: El conjunto de datos de referencia pública más importante para el modelado microestructural del libro de órdenes limitadas (LOB). Contiene datos de alta frecuencia de cinco bancos finlandeses durante un periodo continuo, proporcionando una base para que modelos como SINDy-SHRED demuestren su capacidad de estimación de dinámicas de liquidez en entornos reales.
+
+                  * Simulaciones Estocásticas de Referencia: Para la validación de algoritmos de descubrimiento estocástico como SSISDE, la literatura estándar utiliza simulaciones de Monte Carlo generadas a partir del Modelo de Heston (volatilidad estocástica), el Modelo de Cox-Ingersoll-Ross (CIR) para tasas de interés y procesos de difusión con saltos de Poisson, actuando como la verdad fundamental (ground truth) matemática.
+
+Resumen de la Oportunidad de Investigación ("Nicho Gap")
+La gran brecha sin explorar en la literatura científica actual y de cara al trading cuantitativo de vanguardia es la integración end-to-end del Filtro Prony-AAA como un front-end analítico para un motor SSISDE ejecutado sobre la dinámica latente de un SINDy-SHRED.
+Este enfoque unificado permitiría:
+                     1. Tomar series de precios fragmentadas e ilíquidas (sensores dispersos).
+                     2. Reconstruir analíticamente el espacio de mercado continuo libre de ruido usando la interpolación racional de Prony-AAA.
+
+                     3. Proyectar esta dinámica limpia a un espacio de estado interpretable mediante SHRED.
+
+                     4. Extraer, mediante el formalismo estocástico de Itô de SSISDE (sin asumir ergodicidad ni estacionariedad), las ecuaciones gobernantes discretas de la deriva y la difusión que describen el mercado a nivel analítico puro.
+
+Esta arquitectura híbrida representaría un salto cuántico hacia modelos de trading cuantitativo de caja blanca de alto rendimiento, alta robustez estructural y absoluta transparencia regulatoria.

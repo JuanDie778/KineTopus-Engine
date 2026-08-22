@@ -75,13 +75,22 @@ class AutoARIMAWalkForwardEvaluator:
             
             if len(pred_prices) != horizon or validez != 'OK':
                 row_metrics['Validez'] = 'FALLO MATEMÁTICO'
+                for b in range(blocks):
+                    b_num = b + 1
+                    row_metrics[f'MAPE_B{b_num}'] = np.nan
+                    row_metrics[f'Naive_MAPE_B{b_num}'] = np.nan
+                    row_metrics[f'RMSE_B{b_num}'] = np.nan
+                    row_metrics[f'Hit_B{b_num}'] = np.nan
+                    row_metrics[f'CumHit_B{b_num}'] = np.nan
+                    row_metrics[f'Profit_B{b_num}'] = np.nan
             else:
                 for b in range(blocks):
                     p_pred = np.array(pred_prices[b*block_size : (b+1)*block_size])
                     p_act = np.array(actual_prices[b*block_size : (b+1)*block_size])
                     
-                    # A. Error Porcentual (MAPE)
+                    # A. Error Porcentual (MAPE) y RMSE
                     mape = np.mean(np.abs((p_act - p_pred) / p_act)) * 100
+                    rmse = np.sqrt(np.mean((p_act - p_pred)**2))
                     
                     # Naive Forecast (Línea plana en el último precio)
                     p_naive = np.full_like(p_act, fill_value=last_known_price)
@@ -97,10 +106,16 @@ class AutoARIMAWalkForwardEvaluator:
                     delta_act_cum = np.sign(p_act[-1] - last_known_price)
                     hit_cum = 1.0 if delta_pred_cum == delta_act_cum else 0.0
                     
-                    row_metrics[f'MAPE_B{b+1}'] = round(mape, 2)
-                    row_metrics[f'Naive_MAPE_B{b+1}'] = round(naive_mape, 2)
-                    row_metrics[f'Hit_B{b+1}'] = hit_local
-                    row_metrics[f'CumHit_B{b+1}'] = hit_cum
+                    # D. Rentabilidad (Profit % de Estrategia Long/Short)
+                    act_ret_pct = ((p_act[-1] - last_known_price) / last_known_price) * 100.0
+                    profit = delta_pred_cum * act_ret_pct
+
+                    row_metrics[f'MAPE_B{b+1}'] = round(float(mape), 2)
+                    row_metrics[f'Naive_MAPE_B{b+1}'] = round(float(naive_mape), 2)
+                    row_metrics[f'RMSE_B{b+1}'] = round(float(rmse), 4)
+                    row_metrics[f'Hit_B{b+1}'] = float(hit_local)
+                    row_metrics[f'CumHit_B{b+1}'] = float(hit_cum)
+                    row_metrics[f'Profit_B{b+1}'] = round(float(profit), 2)
                     
             results.append(row_metrics)
             end_idx += stride

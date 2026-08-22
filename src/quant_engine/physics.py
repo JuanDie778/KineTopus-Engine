@@ -186,7 +186,12 @@ class PhysicsDiscoverer:
         for _ in range(horizon_steps):
             try:
                 det_x_dot = self.model.predict(det_x_current)
-                det_x_current = det_x_current + det_x_dot * dt
+                det_x_current = det_x_current * 0.99 + det_x_dot * dt
+                
+                if not disable_norm:
+                    det_x_current[:, 0] = np.clip(det_x_current[:, 0], -3.0, 3.0)
+                    if det_x_current.shape[1] > 1:
+                        det_x_current[:, 1] = np.clip(det_x_current[:, 1], -3.0, 3.0)
                 
                 # Clip preventivo extremo para que matemáticas explosivas (e^x) no rompan Python entero
                 if np.any(np.isnan(det_x_current)) or np.max(np.abs(det_x_current)) > 1e10:
@@ -230,12 +235,12 @@ class PhysicsDiscoverer:
 
              noise = np.column_stack((noise_r, noise_v))
              
-             x_current = x_current + x_dot_pred * dt + noise
+             x_current = x_current * 0.99 + x_dot_pred * dt + noise
              
              # Limitaciones destructivas solo se aplican a mercados financieros relativos, no a trayectorias absolutas Físicas
              if not disable_norm:
-                 x_current[:, 0] = np.clip(x_current[:, 0], -10.0, 10.0)    
-                 x_current[:, 1] = np.clip(x_current[:, 1], -10.0, 10.0)    
+                 x_current[:, 0] = np.clip(x_current[:, 0], -3.0, 3.0)    
+                 x_current[:, 1] = np.clip(x_current[:, 1], -3.0, 3.0)    
              
              t_next = t_current + dt
              

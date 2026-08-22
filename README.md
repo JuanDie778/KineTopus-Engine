@@ -24,7 +24,7 @@ pinned: false
 
 Al adentrarme en el mundo del trading, en el intento de darle sentido a lo que estaba viendo de una manera intuitiva y lógica, me surgio una duda que resulto imposible de ignorar: si se mira una gráfica de precios desde la escala correcta, ciertos tramos se parecían curiosamente a funciones matemáticas que ya habia visto en la escuela: una parábola, un decaimiento exponencial, una oscilación amortiguada... Era una asociación que el ojo reconocía con facilidad, pero que el mundo financiero convencional descartaba como ilusión o como ruido.
 
-![alt text](image-1.png)
+![alt text](docs/assets/image-1.png)
 
 Eso me generó una pregunta que resultó imposible de ignorar: **¿y si no era una ilusión?**
 
@@ -100,8 +100,8 @@ Con la base de datos generada, apliqué un análisis exploratorio (`notebooks_va
 
 A continuación, comparto capturas de pruebas manuales realizadas sobre **BTC-USD** como comprobación visual:
 
-![alt text](<Captura de pantalla 2026-04-21 215517.png>) ![alt text](<Captura de pantalla 2026-05-15 142259.png>)
-![alt text](<Captura de pantalla 2026-04-21 230356.png>) ![alt text](<Captura de pantalla 2026-04-20 162859.png>)
+![alt text](<docs/assets/Captura de pantalla 2026-04-21 215517.png>) ![alt text](<docs/assets/Captura de pantalla 2026-05-15 142259.png>)
+![alt text](<docs/assets/Captura de pantalla 2026-04-21 230356.png>) ![alt text](<docs/assets/Captura de pantalla 2026-04-20 162859.png>)
 
 #### ¿Por qué BTC-USD?
 

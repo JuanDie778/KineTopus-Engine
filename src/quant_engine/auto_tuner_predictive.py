@@ -95,7 +95,7 @@ class PredictiveAutoTuner:
                     dt=dt_val, horizon_steps=test_size, sigma_res_r=0, sigma_res_v=0, 
                     last_price=last_known_price, disable_norm=self.disable_norm, disable_returns=self.disable_returns
                 )
-                p_pred = np.array(p_rep['predicted_prices'])
+                p_pred = np.array(p_rep['prediction']['det_price_path'])
             except Exception:
                 continue
                 

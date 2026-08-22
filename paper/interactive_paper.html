@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kinetopus Engine — White-Box Physical Time Series Forecasting</title>
+    <meta name="description" content="A Parsimonious Physical-Mathematical Pipeline for Local-First Financial Time Series Forecasting using Sparse Identification of Dynamical Systems (SINDy).">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- KaTeX for LaTeX Math Rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+
+    <style>
+        :root {
+            --bg-primary: #0b0f19;
+            --bg-secondary: #111827;
+            --bg-card: rgba(17, 24, 39, 0.85);
+            --bg-glass: rgba(30, 41, 59, 0.6);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(59, 130, 246, 0.4);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-blue: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --accent-purple: #8b5cf6;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-rose: #f43f5e;
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --shadow-subtle: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+            --shadow-glow: 0 0 25px rgba(59, 130, 246, 0.15);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 18px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        /* Top Navigation */
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(11, 15, 25, 0.85);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.85rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            color: var(--text-primary);
+            font-weight: 700;
+            font-size: 1.15rem;
+            letter-spacing: -0.02em;
+        }
+
+        .brand-badge {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+            color: #fff;
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.25rem;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--text-primary);
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-sm);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
+        }
+
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-sm);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1040px;
+            margin: 0 auto;
+            padding: 3rem 1.5rem 6rem;
+        }
+
+        /* Hero Header */
+        .hero {
+            text-align: center;
+            margin-bottom: 3.5rem;
+            padding-bottom: 2.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .hero-tags {
+            display: flex;
+            justify-content: center;
+            gap: 0.6rem;
+            margin-bottom: 1.25rem;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            background: rgba(59, 130, 246, 0.12);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+        }
+
+        .hero-title {
+            font-size: clamp(1.9rem, 4.5vw, 2.75rem);
+            font-weight: 800;
+            line-height: 1.2;
+            letter-spacing: -0.03em;
+            margin-bottom: 1.5rem;
+            color: #ffffff;
+        }
+
+        .hero-author {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.35rem;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-bottom: 1.75rem;
+        }
+
+        .author-name {
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 1.05rem;
+        }
+
+        .author-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.25rem;
+            font-size: 0.85rem;
+        }
+
+        .author-links a {
+            color: var(--accent-cyan);
+            text-decoration: none;
+            transition: underline 0.2s;
+        }
+
+        .author-links a:hover {
+            text-decoration: underline;
+        }
+
+        .hero-actions {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        /* Metric Cards Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-bottom: 3.5rem;
+        }
+
+        .metric-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+        }
+
+        .metric-val {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #ffffff;
+            font-family: var(--font-mono);
+            line-height: 1.1;
+            margin-bottom: 0.35rem;
+        }
+
+        .metric-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .metric-sub {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.35rem;
+        }
+
+        /* Abstract Section */
+        .abstract-box {
+            background: linear-gradient(180deg, rgba(30, 41, 59, 0.4), rgba(15, 23, 42, 0.6));
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            margin-bottom: 3.5rem;
+            position: relative;
+        }
+
+        .abstract-heading {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .abstract-text {
+            color: #cbd5e1;
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+
+        /* Content Sections */
+        .paper-section {
+            margin-bottom: 3.5rem;
+        }
+
+        .section-title {
+            font-size: 1.65rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: #ffffff;
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .section-num {
+            color: var(--accent-blue);
+            font-family: var(--font-mono);
+            font-size: 1.25rem;
+        }
+
+        .paragraph {
+            color: #cbd5e1;
+            font-size: 1rem;
+            margin-bottom: 1.25rem;
+            text-align: justify;
+        }
+
+        /* Architecture Steps Visualizer */
+        .pipeline-flow {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.25rem;
+            margin: 2rem 0;
+        }
+
+        .layer-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1.25rem;
+            transition: all 0.2s ease;
+        }
+
+        .layer-card:hover {
+            border-color: var(--accent-blue);
+            background: rgba(30, 41, 59, 0.5);
+        }
+
+        .layer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .layer-badge {
+            background: rgba(59, 130, 246, 0.15);
+            color: #93c5fd;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+        }
+
+        .layer-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #ffffff;
+        }
+
+        .layer-desc {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Interactive Tabs for Assets */
+        .tabs-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            margin: 2rem 0;
+        }
+
+        .tabs-header {
+            display: flex;
+            background: rgba(15, 23, 42, 0.9);
+            border-bottom: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            padding: 0.85rem 1.25rem;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .tab-btn.active {
+            color: #ffffff;
+            background: rgba(59, 130, 246, 0.15);
+            border-bottom: 2px solid var(--accent-blue);
+        }
+
+        .tab-content {
+            padding: 1.5rem;
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Tables */
+        .table-responsive {
+            overflow-x: auto;
+            margin: 1.5rem 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            text-align: left;
+        }
+
+        th {
+            background: rgba(15, 23, 42, 0.8);
+            color: var(--text-primary);
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+            border-top: 2px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: #cbd5e1;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        /* Figures & Gallery */
+        .figure-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            margin: 2rem 0;
+            text-align: center;
+        }
+
+        .figure-img {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .figure-caption {
+            padding: 1rem 1.5rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-align: left;
+            line-height: 1.6;
+        }
+
+        .figure-caption strong {
+            color: var(--text-primary);
+        }
+
+        /* Equation Card */
+        .equation-card {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1.25rem;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+            text-align: center;
+        }
+
+        /* BibTeX Box */
+        .bibtex-box {
+            background: #060911;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1.25rem;
+            position: relative;
+            margin: 2rem 0;
+        }
+
+        .bibtex-code {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: #93c5fd;
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-size: 0.75rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Footer */
+        .footer {
+            border-top: 1px solid var(--border-color);
+            padding: 3rem 0;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .footer a {
+            color: var(--text-secondary);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            color: var(--accent-blue);
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 0.75rem 1rem;
+            }
+            .hero-title {
+                font-size: 1.75rem;
+            }
+            .container {
+                padding: 2rem 1rem 4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <header>
+        <nav class="navbar" aria-label="Main Navigation">
+            <a href="#" class="nav-brand">
+                <span>KineTopus</span>
+                <span class="brand-badge">Quant Engine</span>
+            </a>
+            <div class="nav-links">
+                <a href="#pipeline" class="nav-link">Pipeline</a>
+                <a href="#results" class="nav-link">Benchmark</a>
+                <a href="#telemetry" class="nav-link">Telemetry</a>
+                <a href="https://github.com/JuanDie778/KineTopus-Engine" target="_blank" rel="noopener noreferrer" class="btn-secondary">
+                    GitHub
+                </a>
+                <a href="https://huggingface.co/spaces/Juan778/KineTopus_Engine" target="_blank" rel="noopener noreferrer" class="btn-primary">
+                    Live Demo 🚀
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container">
+        
+        <!-- Hero Header -->
+        <section class="hero" id="overview">
+            <div class="hero-tags">
+                <span class="tag">Scientific Machine Learning (SciML)</span>
+                <span class="tag">SINDy White-Box ODEs</span>
+                <span class="tag">Walk-Forward Empirical Benchmark</span>
+                <span class="tag">Local-First (16GB RAM)</span>
+            </div>
+            
+            <h1 class="hero-title">
+                Kinetopus Engine: A Parsimonious Physical-Mathematical Pipeline for Local-First Financial Time Series Forecasting using SINDy
+            </h1>
+
+            <div class="hero-author">
+                <span class="author-name">Juan Diego Ussa Aponte</span>
+                <span>Independent Quantitative Research &amp; Scientific Machine Learning</span>
+                <div class="author-links">
+                    <a href="mailto:ussaapontejuandiego@gmail.com">ussaapontejuandiego@gmail.com</a> •
+                    <a href="https://github.com/JuanDie778/KineTopus-Engine" target="_blank" rel="noopener noreferrer">GitHub Repository</a> •
+                    <a href="https://huggingface.co/spaces/Juan778/KineTopus_Engine" target="_blank" rel="noopener noreferrer">Hugging Face Space</a>
+                </div>
+            </div>
+
+            <div class="hero-actions">
+                <a href="https://huggingface.co/spaces/Juan778/KineTopus_Engine" target="_blank" rel="noopener noreferrer" class="btn-primary" style="padding: 0.75rem 1.5rem; font-size: 0.95rem;">
+                    Launch Interactive App
+                </a>
+                <a href="main.tex" download class="btn-secondary" style="padding: 0.75rem 1.5rem; font-size: 0.95rem;">
+                    Download LaTeX (.tex)
+                </a>
+                <a href="#bibtex" class="btn-secondary" style="padding: 0.75rem 1.5rem; font-size: 0.95rem;">
+                    Cite Paper
+                </a>
+            </div>
+        </section>
+
+        <!-- Metric Highlight Cards -->
+        <section class="metrics-grid" aria-label="Key Performance Indicators">
+            <div class="metric-card">
+                <div class="metric-val" style="color: #60a5fa;">59.15%</div>
+                <div class="metric-label">Directional Hit Ratio (B30)</div>
+                <div class="metric-sub">150-candle horizon, $p < 0.0001$ ($z=4.942$)</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-val" style="color: #34d399;">&lt; 1 ms</div>
+                <div class="metric-label">Inference Latency (CPU)</div>
+                <div class="metric-sub">~1,525× faster than LSTM (1,524 ms)</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-val" style="color: #a78bfa;">98.60%</div>
+                <div class="metric-label">Mathematical Validity Rate</div>
+                <div class="metric-sub">Graceful Degradation Autopilot</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-val" style="color: #f472b6;">3,525</div>
+                <div class="metric-label">Walk-Forward Iterations</div>
+                <div class="metric-sub">6 Assets, 4 Classes, 10-Year Depth</div>
+            </div>
+        </section>
+
+        <!-- Abstract Box -->
+        <section class="abstract-box" id="abstract">
+            <div class="abstract-heading">
+                <span>Executive Abstract</span>
+            </div>
+            <p class="abstract-text">
+                Financial time series analysis has long been trapped in a dichotomy between linear, oversimplified statistical models (e.g., ARIMA) and opaque, computationally expensive deep learning black boxes (e.g., LSTMs, Transformers). This paper introduces <strong>Kinetopus Engine</strong>, a parsimonious, White-Box Scientific Machine Learning (SciML) framework that challenges the assumption of pure stochastic randomness by constructing a mathematically justified continuous physical perspective over discrete financial data. Operating under low computational complexity on consumer-grade CPU hardware, the pipeline discovers explicit, inspectable ordinary differential equations $\mathrm{d}r/\mathrm{d}t = f(r, V)$ and projects probabilistic Monte Carlo trajectories via damped Euler-Maruyama SDEs ($\lambda = 0.99$).
+            </p>
+        </section>
+
+        <!-- Section 1: 5-Layer Physical Architecture -->
+        <section class="paper-section" id="pipeline">
+            <h2 class="section-title">
+                <span class="section-num">01.</span>
+                5-Layer Continuous-to-Physical Architecture
+            </h2>
+            <p class="paragraph">
+                Rather than fitting discrete empirical curve parameters, Kinetopus lifts noisy market observables $(P_t, V_t)$ onto a smooth, $C^2$-differentiable continuous manifold and identifies governing differential equations through five sequential layers:
+            </p>
+
+            <div class="pipeline-flow">
+                <div class="layer-card">
+                    <div class="layer-header">
+                        <span class="layer-badge">LAYER 0-1</span>
+                        <span style="color: var(--accent-cyan);">Signal Lift</span>
+                    </div>
+                    <div class="layer-title">State Space &amp; FFT Sensing</div>
+                    <div class="layer-desc">
+                        Converts prices to scaled log-returns $\tilde{r}_t = 100 \ln(P_t/P_{t-1})$ and volume Z-scores. Evaluates RFFT to detect dominant cyclical harmonics ($T_{\max}$).
+                    </div>
+                </div>
+
+                <div class="layer-card">
+                    <div class="layer-header">
+                        <span class="layer-badge">LAYER 2</span>
+                        <span style="color: var(--accent-blue);">Continuity</span>
+                    </div>
+                    <div class="layer-title">Topological Splines + Liquid Memory</div>
+                    <div class="layer-desc">
+                        Fits cubic B-Splines $S(t) \in C^2(\mathbb{R})$ inversely weighted by local EWMA volatility. Derivatives $\dot{X}(t)$ and $\ddot{X}(t)$ are derived <em>analytically</em>.
+                    </div>
+                </div>
+
+                <div class="layer-card">
+                    <div class="layer-header">
+                        <span class="layer-badge">LAYER 3</span>
+                        <span style="color: var(--accent-amber);">Isolation</span>
+                    </div>
+                    <div class="layer-title">Online CUSUM Regime Slicing</div>
+                    <div class="layer-desc">
+                        Monitors standardized residual drift $(S_t^+, S_t^-)$. Slices historical momentum at $H=4.0$, discovering equations exclusively over the active regime $\mathcal{R}_{\text{active}}$.
+                    </div>
+                </div>
+
+                <div class="layer-card">
+                    <div class="layer-header">
+                        <span class="layer-badge">LAYER 4</span>
+                        <span style="color: var(--accent-emerald);">Discovery</span>
+                    </div>
+                    <div class="layer-title">SINDy Sparse Equation Discovery</div>
+                    <div class="layer-desc">
+                        Solves STLSQ over polynomial library $\Theta(r,V)$ to extract explicit ODEs: $\dot{r} = c_0 + c_1 r + c_2 V + c_4 (r \cdot V)$.
+                    </div>
+                </div>
+
+                <div class="layer-card">
+                    <div class="layer-header">
+                        <span class="layer-badge">LAYER 5</span>
+                        <span style="color: var(--accent-purple);">Stochastics</span>
+                    </div>
+                    <div class="layer-title">Damped Euler-Maruyama SDE ($M=1000$)</div>
+                    <div class="layer-desc">
+                        Integrates 1,000 Monte Carlo paths stabilized by hydrodynamic dissipation factor $\lambda=0.99$: $X_{t+1} = \lambda [X_t + f(X_t)\Delta t] + \Sigma_{\text{res}} \sqrt{\Delta t} \mathcal{N}(0, I)$.
+                    </div>
+                </div>
+            </div>
+
+            <div class="equation-card">
+                $$X_{t+\Delta t}^{(m)} = \lambda \left[ X_t^{(m)} + f_{\text{SINDy}}\left(X_t^{(m)}\right) \Delta t \right] + \Sigma_{\text{res}} \sqrt{\Delta t} \, \mathcal{N}^{(m)}(0, I_2), \quad \lambda = 0.99$$
+            </div>
+        </section>
+
+        <!-- Section 2: Interactive Asset Benchmark -->
+        <section class="paper-section" id="results">
+            <h2 class="section-title">
+                <span class="section-num">02.</span>
+                Empirical Walk-Forward Benchmark (3,525 Iterations)
+            </h2>
+            <p class="paragraph">
+                The Comparative Benchmark Environment (CBE) evaluated Kinetopus against SOTA deep learning (LSTM), linear econometrics (ARIMA), and Naive baselines across 6 cross-class assets. Select an asset below to view its empirical performance:
+            </p>
+
+            <div class="tabs-container">
+                <div class="tabs-header">
+                    <button class="tab-btn active" onclick="switchTab(event, 'tab-qqq')">QQQ (Nasdaq-100)</button>
+                    <button class="tab-btn" onclick="switchTab(event, 'tab-msft')">MSFT (Tech)</button>
+                    <button class="tab-btn" onclick="switchTab(event, 'tab-btc')">BTC-USD (Crypto)</button>
+                    <button class="tab-btn" onclick="switchTab(event, 'tab-xlf')">XLF (Financials)</button>
+                    <button class="tab-btn" onclick="switchTab(event, 'tab-eth')">ETH-USD (Crypto)</button>
+                    <button class="tab-btn" onclick="switchTab(event, 'tab-gld')">GLD (Gold)</button>
+                </div>
+
+                <div id="tab-qqq" class="tab-content active">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3 style="color: #ffffff;">QQQ — Invesco QQQ Trust (Nasdaq-100)</h3>
+                        <span class="tag" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.3);">High Physical Coherence</span>
+                    </div>
+                    <p class="paragraph" style="font-size: 0.9rem;">
+                        Strong institutional momentum and high liquidity yield exceptional trajectory continuity. SINDy captures macro trend inertia with high precision.
+                    </p>
+                    <div class="metrics-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 0;">
+                        <div class="metric-card"><div class="metric-val" style="color: #34d399;">71.57%</div><div class="metric-label">Hit Ratio at B30 (150d)</div></div>
+                        <div class="metric-card"><div class="metric-val" style="color: #60a5fa;">+8.12%</div><div class="metric-label">Long/Short Profit %</div></div>
+                        <div class="metric-card"><div class="metric-val" style="color: #a78bfa;">104</div><div class="metric-label">Walk-Forward Iterations</div></div>
+                    </div>
+                </div>
+
+                <div id="tab-msft" class="tab-content">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3 style="color: #ffffff;">MSFT — Microsoft Corporation</h3>
+                        <span class="tag" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.3);">High Physical Coherence</span>
+                    </div>
+                    <p class="paragraph" style="font-size: 0.9rem;">
+                        Large-cap single equity displaying smooth inertial drift. Physical coupling between volume forcing and return velocity generates robust directional edge.
+                    </p>
+                    <div class="metrics-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 0;">
+                        <div class="metric-card"><div class="metric-val" style="color: #34d399;">70.30%</div><div class="metric-label">Hit Ratio at B30 (150d)</div></div>
+                        <div class="metric-card"><div class="metric-val" style="color: #60a5fa;">+8.84%</div><div class="metric-label">Long/Short Profit %</div></div>
+                        <div class="metric-card"><div class="metric-val" style="color: #a78bfa;">104</div><div class="metric-label">Walk-Forward Iterations</div></div>
+                    </div>
+                </div>
+
+                <div id="tab-btc" class="tab-content">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3 style="color: #ffffff;">BTC-USD — Bitcoin</h3>
+                        <span class="tag" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.3);">High Alpha Yield</span>
+                    </div>
+                    <p class="paragraph" style="font-size: 0.9rem;">
+                        High continuous volatility and strong phase-space orbital dynamics generate the highest cumulative economic return in the benchmark suite.
+                    </p>
+                    <div class="metrics-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 0;">
+                        <div class="metric-card"><div class="metric-val" style="color: #34d399;">60.87%</div><div class="metric-label">Hit Ratio at B30 (150d)</div></div>
+                        <div class="metric-card"><div class="metric-val" style="color: #60a5fa;">+25.99%</div><div class="metric-label">Long/Short Profit %</div></div>
+                        <div class="metric-card"><div class="metric-val" style="color: #a78bfa;">161</div><div class="metric-label">Walk-Forward Iterations</div></div>
+                    </div>
+                </div>
+
+                <div id="tab-xlf" class="tab-content">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3 style="color: #ffffff;">XLF — Financial Select Sector SPDR</h3>
+                        <span class="tag" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; border-color: rgba(59, 130, 246, 0.3);">Moderate Coherence</span>
+                    </div>
+                    <p class="paragraph" style="font-size: 0.9rem;">
+                        Sector ETF influenced by interest rate cycles. Maintains sustained edge over random walk ($56.31\% > 50.0\%$).
+                    </p>
+                    <div class="metrics-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 0;">
+                        <div class="metric-card"><div class="metric-val" style="color: #60a5fa;">56.31%</div><div class="metric-label">Hit Ratio at B30 (150d)</div></div>
+                        <div class="metric-card"><div class="metric-val" style="color: #60a5fa;">+1.00%</div><div class="metric-label">Long/Short Profit %</div></div>
+                        <div class="metric-card"><div class="metric-val" style="color: #a78bfa;">104</div><div class="metric-label">Walk-Forward Iterations</div></div>
+                    </div>
+                </div>
+
+                <div id="tab-eth" class="tab-content">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3 style="color: #ffffff;">ETH-USD — Ethereum</h3>
+                        <span class="tag" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; border-color: rgba(59, 130, 246, 0.3);">Moderate Coherence</span>
+                    </div>
+                    <p class="paragraph" style="font-size: 0.9rem;">
+                        Crypto asset with mixed regime dynamics. Preserves positive directional accuracy and profit over 138 episodes.
+                    </p>
+                    <div class="metrics-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 0;">
+                        <div class="metric-card"><div class="metric-val" style="color: #60a5fa;">52.90%</div><div class="metric-label">Hit Ratio at B30 (150d)</div></div>
+                        <div class="metric-card"><div class="metric-val" style="color: #60a5fa;">+1.88%</div><div class="metric-label">Long/Short Profit %</div></div>
+                        <div class="metric-card"><div class="metric-val" style="color: #a78bfa;">138</div><div class="metric-label">Walk-Forward Iterations</div></div>
+                    </div>
+                </div>
+
+                <div id="tab-gld" class="tab-content">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3 style="color: #ffffff;">GLD — SPDR Gold Shares</h3>
+                        <span class="tag" style="background: rgba(244, 63, 94, 0.15); color: #fb7185; border-color: rgba(244, 63, 94, 0.3);">Epistemic Boundary</span>
+                    </div>
+                    <p class="paragraph" style="font-size: 0.9rem;">
+                        Commodity governed by exogenous macroeconomic shocks (interest rates, geopolitical premia). Serves as an honest scientific diagnostic of the boundary conditions of pure technical momentum ODEs.
+                    </p>
+                    <div class="metrics-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 0;">
+                        <div class="metric-card"><div class="metric-val" style="color: #fb7185;">44.00%</div><div class="metric-label">Hit Ratio at B30 (150d)</div></div>
+                        <div class="metric-card"><div class="metric-val" style="color: #60a5fa;">+2.01%</div><div class="metric-label">Long/Short Profit %</div></div>
+                        <div class="metric-card"><div class="metric-val" style="color: #a78bfa;">104</div><div class="metric-label">Walk-Forward Iterations</div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Consolidated Table -->
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Model Paradigm</th>
+                            <th>Hit Ratio B30</th>
+                            <th>Hit Ratio B60</th>
+                            <th>Inference Latency</th>
+                            <th>Interpretability</th>
+                            <th>Hardware Req.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong style="color: #60a5fa;">Kinetopus Engine</strong></td>
+                            <td><strong style="color: #34d399;">59.15%</strong> ($p < 0.0001$)</td>
+                            <td>55.89%</td>
+                            <td><strong style="color: #34d399;">&lt; 1 ms</strong></td>
+                            <td>White-Box ($\dot{r} = f(r,V)$)</td>
+                            <td>$\le 16\,\text{GB}$ RAM, CPU</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Deep Learning (LSTM)</strong></td>
+                            <td>65.87%</td>
+                            <td>66.99%</td>
+                            <td>1,524.72 ms</td>
+                            <td>Opaque Black-Box</td>
+                            <td>Cloud GPUs ($>8\,\text{GB}$)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ARIMA Econometrics</strong></td>
+                            <td>46.15%</td>
+                            <td>48.61%</td>
+                            <td>&lt; 1 ms</td>
+                            <td>Linear Autoregressive</td>
+                            <td>CPU-only</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Naive Random-Walk</strong></td>
+                            <td>0.00%</td>
+                            <td>0.00%</td>
+                            <td>0.04 ms</td>
+                            <td>Static Baseline</td>
+                            <td>CPU-only</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Section 3: Live Application Telemetry Gallery -->
+        <section class="paper-section" id="telemetry">
+            <h2 class="section-title">
+                <span class="section-num">03.</span>
+                Interactive Telemetry &amp; Open Deployment
+            </h2>
+            <p class="paragraph">
+                The complete physical-predictive engine is openly accessible on Hugging Face Spaces. It visualizes the multi-scale physics of financial markets across time, phase space, and equation space in real time:
+            </p>
+
+            <div class="figure-box">
+                <img src="figures/fig_telemetry_dashboard.png" alt="Physical-Predictive Telemetry Dashboard" class="figure-img">
+                <div class="figure-caption">
+                    <strong>Figure 1: Full Telemetry Dashboard on BTC-USD.</strong> (Top) Raw price series, piecewise $C^2$ Spline manifold, deterministic ODE forecast, and 1,000-path Monte Carlo stochastic cone; (Bottom-Left) Phase-Space Attractor orbital radar ($\dot{r}$ vs. $\ddot{r}$); (Bottom-Right) Real-time CUSUM cumulative tension detector.
+                </div>
+            </div>
+
+            <div class="figure-box">
+                <img src="figures/fig_sindy_equations.png" alt="Discovered SINDy Governing Equations" class="figure-img">
+                <div class="figure-caption">
+                    <strong>Figure 2: Discovered Governing ODEs and Analytical Attractor.</strong> Renders explicit coupled ordinary differential equations discovered by SINDy for the active market regime, alongside real-time pipeline performance telemetry and continuous analytical general solutions.
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 2rem;">
+                <a href="https://huggingface.co/spaces/Juan778/KineTopus_Engine" target="_blank" rel="noopener noreferrer" class="btn-primary" style="padding: 0.85rem 2rem; font-size: 1rem;">
+                    Test Live in Hugging Face Spaces 🚀
+                </a>
+            </div>
+        </section>
+
+        <!-- Section 4: BibTeX Citation -->
+        <section class="paper-section" id="bibtex">
+            <h2 class="section-title">
+                <span class="section-num">04.</span>
+                Citation &amp; BibTeX
+            </h2>
+            <p class="paragraph">
+                If you find this work, the open-source pipeline, or the empirical findings useful in your academic research or quantitative trading systems, please cite the paper as follows:
+            </p>
+
+            <div class="bibtex-box">
+                <button class="copy-btn" onclick="copyBibtex()">Copy BibTeX</button>
+                <div class="bibtex-code" id="bibtex-text">@article{ussa2026kinetopus,
+  title={Kinetopus Engine: A Parsimonious Physical-Mathematical Pipeline for Local-First Financial Time Series Forecasting using Sparse Identification of Dynamical Systems (SINDy)},
+  author={Ussa Aponte, Juan Diego},
+  journal={arXiv preprint},
+  year={2026},
+  url={https://github.com/JuanDie778/KineTopus-Engine}
+}</div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container" style="padding-bottom: 0;">
+            <p>
+                <strong>Kinetopus Engine</strong> © 2026 Juan Diego Ussa Aponte. Released under open-source research license.
+            </p>
+            <p style="margin-top: 0.5rem;">
+                <a href="https://github.com/JuanDie778/KineTopus-Engine" target="_blank" rel="noopener noreferrer">GitHub Repository</a> •
+                <a href="https://huggingface.co/spaces/Juan778/KineTopus_Engine" target="_blank" rel="noopener noreferrer">Hugging Face Deployment</a> •
+                <a href="mailto:ussaapontejuandiego@gmail.com">Contact Author</a>
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        function switchTab(evt, tabId) {
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => content.classList.remove('active'));
+
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+
+            document.getElementById(tabId).classList.add('active');
+            evt.currentTarget.classList.add('active');
+        }
+
+        function copyBibtex() {
+            const text = document.getElementById('bibtex-text').innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                btn.innerText = 'Copied! ✓';
+                setTimeout(() => { btn.innerText = 'Copy BibTeX'; }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>

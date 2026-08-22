@@ -31,3 +31,15 @@
 **ESTADO:** 📋 EN IDEACIÓN
 **META:** Permitir que el motor ingiera no solo precio y volumen, sino un tensor N-Dimensional (ej: agregando RSI, MACD o Volatilidad de Opciones).
 - Explorar cómo SINDy maneja matrices tridimensionales $(N, 3)$ para encontrar relaciones del tipo $\dot{P} = P - MACD^2$.
+
+---
+
+## 🚀 FASE 12: LABORATORIO DE OPTIMIZACIÓN Y AUTOTUNING GLOBAL (MODO ACTIVE)
+**ESTADO:** 🛠️ EN DESARROLLO (Optimization Lab)
+**META:** Implementar un pipeline de entrenamiento hiperparamétrico para KineTopus que maximice la métrica True Directional Alpha (TDA) y el Matthews Correlation Coefficient (MCC) mitigando la paradoja de la tasa base (Base Rate Fallacy).
+
+- [x] **1. Corrección del Bug en PredictiveAutoTuner:** Resolver el KeyError crítico en `src/quant_engine/auto_tuner_predictive.py` (`predicted_prices` vs `det_price_path`).
+- [x] **2. Formulación de la Función de Fitness TDA:** Diseñar e implementar `define_tda_objective_function` penalizando over-fitting, complejidad no-lineal y mortalidad matemática en `optimizer_pipeline.py`.
+- [x] **3. Implementación del Optimizador (Search Space Explorer):** Crear un algoritmo de búsqueda robusto y eficiente en memoria (Random/Grid Search o Algoritmo Genético) optimizado para 16GB RAM.
+- [x] **4. Validación Cruzada Out-of-Sample:** Diseñar la estrategia de separación In-Sample (Entrenamiento) y Out-of-Sample (Validación/Test) para batir las métricas de `3_Analytics_and_Discovery.ipynb` sin Data Leakage.
+- [x] **5. Laboratorio de Análisis de Validación:** Crear el notebook interactivo `6_AutoTuner_Validation_Analysis.ipynb` para comparar el Auto-Tuner Clásico con el Meta-Optimizer entrenado sintética y realmente.
