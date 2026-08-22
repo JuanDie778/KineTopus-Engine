@@ -1,0 +1,8 @@
+*.pdf
+*.zip
+*.pkl
+*.png
+docs/assets/
+paper/
+Estado_del_arte/
+tectonic_bin/
