@@ -221,7 +221,7 @@ def render_quant_mode():
     col_input, col_config = st.columns([2, 1])
     with col_input:
         with st.form("mercado_form"):
-            ticker = st.text_input("Símbolo del Activo (Ej. AAPL, BTC-USD):", "SPY")
+            ticker = st.text_input("Símbolo del Activo (Ej. AAPL, BTC-USD):", "BTC-USD")
             
             col_t1, col_t2 = st.columns(2)
             with col_t1:
@@ -258,15 +258,18 @@ def render_quant_mode():
          context_window = st.slider("Ventana de Contexto (Velas)", 0, 5000, 1000, help="0 = Todo el historial. Limita las velas analizadas por los Splines para captar inercia reciente.")
          disable_returns = st.checkbox("Modo Física Clásica (Usar Precio Absoluto)", value=False, help="Bypass de Log Returns. Usa directamente P(t) - Ideal para Cinemática y Modelos Toy.")
          disable_norm = st.checkbox("Desactivar Normalización (Modo Calibración)", value=False, help="Procesa valores crudos para tests con modelos físicos perfectos (Toy Models).")
-         horizon_steps = st.slider("Horizonte Predictivo (t+N) [Euler]", 1, 500, 60)
+         horizon_steps = st.slider("Horizonte Predictivo (t+N) [Euler]", 1, 500, 150)
          poly_degree = st.slider("Complejidad SINDy (Grado Polinomial)", 1, 3, 1, help="1: Lineal (Gravedad), 2: Interactivo (Zorros/Conejos, Lotka-Volterra o Mercado Clásico), 3: Extra Complejo.")
          smooth_tol = st.slider("Tolerancia Spline (Aislamiento de Ruido)", 0.0001, 0.005, 0.005, step=0.0001, format="%.4f")
          cusum_h = st.slider("Umbral CUSUM (H - Robustez Anómala)", 5.0, 50.0, 5.0)
          cusum_k = st.slider("Drift CUSUM (k - Tolerancia al Ruido)", 0.1, 5.0, 1.0, format="%.2f")
          
-         if st.button("🤖 Auto-Tune CUSUM Drift", help="Busca el Drift óptimo ponderando la pureza (R2) de SINDy a lo largo del histórico."):
+         st.markdown("---")
+         st.info("💡 **Calibración Automática:** Presiona el botón de abajo para que el motor busque el Drift ($k$) óptimo que maximiza el $R^2$ de SINDy. Luego ajusta el slider superior al valor encontrado.")
+         
+         if st.button("🤖 🔍 Auto-Tune CUSUM Drift (Calibrar k)", type="secondary", use_container_width=True, help="Busca el Drift óptimo ponderando la pureza (R2) de SINDy a lo largo del histórico."):
              if st.session_state.get('quant_df') is None:
-                 st.warning("Aún no hay datos de mercado. Presiona 'Analizar Datos' en el panel principal primero.")
+                 st.warning("⚠️ Primero descarga o sube los datos de mercado presionando 'Descargar y Analizar'.")
              else:
                  with st.spinner("Buscando Resonancia Topológica (Testando 50 Drifts)..."):
                      from src.quant_engine.auto_tuner import CUSUMAutoTuner
@@ -274,8 +277,8 @@ def render_quant_mode():
                      best_k, rep = tuner.run_search()
                      
                      st.success(f"🏆 **¡Drift CUSUM Óptimo Encontrado!**\n\n"
-                                f"► **Desliza k a:** `{best_k}`\n\n"
-                                f"*(Logró un R2 ponderado de `{rep['weighted_r2']:.4f}` aislando `{rep['num_quiebres']}` macro-quiebres)*.")
+                                f"👉 **Ajusta manualmente el slider 'Drift CUSUM (k)' de arriba a:** `{best_k}`\n\n"
+                                f"*(Logró un $R^2$ ponderado de `{rep['weighted_r2']:.4f}` aislando `{rep['num_quiebres']}` macro-quiebres)*.")
 
     if st.session_state['quant_df'] is not None:
          # Limpiar gráficos previos de Streamlit si lo amerita el diseño, pero rerun lo hace solo.
@@ -291,17 +294,8 @@ def main():
     if 'session_id' not in st.session_state:
         st.session_state['session_id'] = str(uuid.uuid4())
 
-    # Sidebar
-    with st.sidebar:
-        st.header("🛠️ Configuración Global")
-        st.info(f"Sesión ID: {st.session_state['session_id'][:8]}...")
-        
-        if st.button("Reiniciar Sesión"):
-            for key in list(st.session_state.keys()):
-                del st.session_state[key]
-            st.rerun()
-
     render_quant_mode()
 
 if __name__ == "__main__":
     main()
+

@@ -177,25 +177,39 @@ class QuantDashboard:
             ), row=1, col=1)
 
         # --- PANEL 2: PRIMERA DERIVADA (VELOCIDAD) (Fila 2, Col 1) ---
-        fig.add_trace(go.Scatter(
-            x=t, y=r_dot,
-            mode='lines',
-            name=f'Velocidad (d{var_name}/dt)',
-            line=dict(color='#00ffcc', width=2),
-            showlegend=False
-        ), row=2, col=1)
+        start_idx = 0
+        for i, trigger_idx in enumerate(list(cusum_triggers) + [len(t)]):
+            segment_t = t[start_idx:trigger_idx]
+            segment_r_dot = r_dot[start_idx:trigger_idx]
+            if len(segment_t) > 0:
+                color = colors[i % len(colors)]
+                fig.add_trace(go.Scatter(
+                    x=segment_t, y=segment_r_dot,
+                    mode='lines',
+                    name=f'Velocidad (d{var_name}/dt)' if i == 0 else None,
+                    line=dict(color=color, width=2),
+                    showlegend=False
+                ), row=2, col=1)
+            start_idx = trigger_idx
         
         # Línea de referencia cero en velocidad
         fig.add_hline(y=0.0, line_dash="dash", line_color="rgba(255, 255, 255, 0.3)", row=2, col=1)
 
         # --- PANEL 3: SEGUNDA DERIVADA (ACELERACIÓN) (Fila 3, Col 1) ---
-        fig.add_trace(go.Scatter(
-            x=t, y=r_dot2,
-            mode='lines',
-            name=f'Aceleración (d²{var_name}/dt²)',
-            line=dict(color='#ff9900', width=2),
-            showlegend=False
-        ), row=3, col=1)
+        start_idx = 0
+        for i, trigger_idx in enumerate(list(cusum_triggers) + [len(t)]):
+            segment_t = t[start_idx:trigger_idx]
+            segment_r_dot2 = r_dot2[start_idx:trigger_idx]
+            if len(segment_t) > 0:
+                color = colors[i % len(colors)]
+                fig.add_trace(go.Scatter(
+                    x=segment_t, y=segment_r_dot2,
+                    mode='lines',
+                    name=f'Aceleración (d²{var_name}/dt²)' if i == 0 else None,
+                    line=dict(color=color, width=2),
+                    showlegend=False
+                ), row=3, col=1)
+            start_idx = trigger_idx
         
         # Línea de referencia cero en aceleración
         fig.add_hline(y=0.0, line_dash="dash", line_color="rgba(255, 255, 255, 0.3)", row=3, col=1)
