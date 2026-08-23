@@ -363,30 +363,46 @@ class QuantDashboard:
         st.plotly_chart(fig, use_container_width=True)
 
         # --- PANEL 3: CAJA BLANCA ---
-        st.markdown("### 🧮 Ecuaciones de Momentum (SINDy)")
+        st.markdown("### 🧮 Ecuaciones de Momentum Descubiertas (SINDy)")
         var_name = 'P' if disable_returns else 'r'
+        
+        def _to_latex(eq_str, v_name):
+            if not eq_str or eq_str.strip() in ["0", "0.0", ""]:
+                return r"0"
+            s = eq_str.replace("*", " ")
+            s = s.replace("x0", v_name).replace("x1", "V")
+            return s
+        
+        eq_r_active = _to_latex(active_physics_report['equations'][0], var_name)
+        eq_v_active = _to_latex(active_physics_report['equations'][1], 'V')
         
         # Régimen Activo (Vigente)
         st.markdown("#### 🟢 Régimen Activo (Vigente)")
-        st.code(f"d{var_name}/dt = {active_physics_report['equations'][0]}\ndV/dt = {active_physics_report['equations'][1]}", language="text")
+        st.latex(rf"\begin{{aligned}} \frac{{d{var_name}}}{{dt}} &= {eq_r_active} \\ \frac{{dV}}{{dt}} &= {eq_v_active} \end{{aligned}}")
+        
         st.caption(f"🚀 Spline MSE: `{active_physics_report.get('blender_mse', 0):.6f}` | "
                   f"🧠 CUSUM Latency: `{active_physics_report.get('cusum_runtime', 0):.2f}ms` | "
                   f"⚙️ SINDy R2: `{active_physics_report.get('score', 0):.4f}` "
-                  f"(Terminos: `{active_physics_report.get('complexity', 0)}`) | "
+                  f"(Términos: `{active_physics_report.get('complexity', 0)}`) | "
                   f"📉 Ruido σ_r: `{active_physics_report.get('sigma_res_r', 0):.5f}`")
         
         # Expanders para Regímenes Históricos y Global
-        with st.expander("Ver Físicas Históricas (Regímenes Anteriores)"):
+        with st.expander("📂 Ver Físicas Históricas (Regímenes Anteriores y Global)"):
             st.markdown("**Ecuación Inercial Global (Rendimiento Promediado)**")
-            st.code(f"d{var_name}/dt = {physics_report_global['equations'][0]}\ndV/dt = {physics_report_global['equations'][1]}", language="text")
+            eq_r_glob = _to_latex(physics_report_global['equations'][0], var_name)
+            eq_v_glob = _to_latex(physics_report_global['equations'][1], 'V')
+            st.latex(rf"\begin{{aligned}} \frac{{d{var_name}}}{{dt}} &= {eq_r_glob} \\ \frac{{dV}}{{dt}} &= {eq_v_glob} \end{{aligned}}")
             st.caption(f"R2: `{physics_report_global.get('score', 0):.4f}` | Términos: `{physics_report_global.get('complexity', 0)}`")
             
             st.divider()
-            for rep in reversed(regime_physics_reports[:-1]): # Todos menos el último, invertidos (el más reciente arriba)
+            for rep in reversed(regime_physics_reports[:-1]): # Todos menos el último, invertidos
                 st.markdown(f"**{rep['regime_name']}**")
-                st.code(f"d{var_name}/dt = {rep['equations'][0]}\ndV/dt = {rep['equations'][1]}", language="text")
+                eq_r_reg = _to_latex(rep['equations'][0], var_name)
+                eq_v_reg = _to_latex(rep['equations'][1], 'V')
+                st.latex(rf"\begin{{aligned}} \frac{{d{var_name}}}{{dt}} &= {eq_r_reg} \\ \frac{{dV}}{{dt}} &= {eq_v_reg} \end{{aligned}}")
                 st.caption(f"R2: `{rep.get('score', 0):.4f}` | Términos: `{rep.get('complexity', 0)}` | 📉 Ruido σ_r: `{rep.get('sigma_res_r', 0):.5f}`")
         
         if analytical_solution:
             st.markdown("### 📜 Solución General del Atractor (Régimen Vigente)")
             st.info(analytical_solution)
+
