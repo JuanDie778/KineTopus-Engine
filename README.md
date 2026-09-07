@@ -14,9 +14,14 @@ pinned: false
 
 > **¿Qué es?** Es una arquitecutra matematica que transforma el ruido caótico de las series temporales en leyes físicas continuas, descubriendo la ecuación que dicta su inercia
 
-![Kinetopus Radar Concept](https://img.shields.io/badge/Status-Experimental-red)
-![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue)
+[![Status: Research Preprint](https://img.shields.io/badge/Status-Research%20Preprint-blue)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7431018)
+[![SSRN Preprint](https://img.shields.io/badge/SSRN-Preprint%207431018-002D62.svg?logo=elsevier&logoColor=white)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7431018)
+[![ORCID](https://img.shields.io/badge/ORCID-0009--0008--9155--4653-A6CE39.svg?logo=orcid&logoColor=white)](https://orcid.org/0009-0008-9155-4653)
+![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
+[![Interactive Space](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Space-FFD21E)](https://huggingface.co/spaces/Juan778/KineTopus_Engine)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
+📄 **Artículo Científico Formal:** Consulta el paper en [Kinetopus_Engine_Paper.pdf](Kinetopus_Engine_Paper.pdf) o en [SSRN (Preprint ID 7431018)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7431018).
 
 ---
 
@@ -195,6 +200,25 @@ Kinetopus Engine no nació en el vacío. Está construido sobre los hombros de i
 | **FFT** *(Fast Fourier Transform)* | Detección de frecuencias dominantes en Retornos y Volumen (Capa Sensor) | Cooley, J. W., & Tukey, J. W. (1965). *An algorithm for the machine calculation of complex Fourier series.* Mathematics of Computation, 19(90), 297–301. [DOI](https://doi.org/10.1090/S0025-5718-1965-0178586-1) |
 | **CUSUM** *(Cumulative Sum Control Chart)* | Detección de cambios de régimen (quiebres estructurales) en la inercia del mercado | Page, E. S. (1954). *Continuous Inspection Schemes.* Biometrika, 41(1/2), 100–115. [DOI](https://doi.org/10.1093/biomet/41.1-2.100) |
 | **Método de Euler–Maruyama** | Integración numérica de las SDEs para la proyección estocástica (Monte Carlo) | Maruyama, G. (1955). *Continuous Markov processes and stochastic equations.* Rendiconti del Circolo Matematico di Palermo, 4, 48–90. |
+
+---
+
+### 📖 Cita Académica (BibTeX)
+
+Si utilizas este motor, su marco metodológico o sus benchmarks en tu investigación, por favor cita el preprint formal:
+
+```bibtex
+@article{ussa2026kinetopus,
+  title={Kinetopus Engine: A Parsimonious Physical-Mathematical Pipeline for Local-First Financial Time Series Forecasting using Sparse Identification of Dynamical Systems (SINDy)},
+  author={Ussa Aponte, Juan Diego},
+  journal={SSRN Electronic Journal},
+  year={2026},
+  note={Preprint ID 7431018},
+  url={https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7431018}
+}
+```
+
+**Investigador Principal:** Juan Diego Ussa Aponte ([ORCID: 0009-0008-9155-4653](https://orcid.org/0009-0008-9155-4653))
 
 ---
 
