@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use this software or cite the associated research, please cite it as below."
+authors:
+  - family-names: "Ussa Aponte"
+    given-names: "Juan Diego"
+    email: "ussaapontejuandiego@gmail.com"
+title: "Kinetopus Engine: A Parsimonious Physical-Mathematical Pipeline for Local-First Financial Time Series Forecasting using Sparse Identification of Dynamical Systems (SINDy)"
+version: "1.0.0"
+date-released: "2026-08-23"
+url: "https://github.com/JuanDie778/KineTopus-Engine"
+repository-code: "https://github.com/JuanDie778/KineTopus-Engine"
+license: "Apache-2.0"
+keywords:
+  - "quantitative-finance"
+  - "scientific-machine-learning"
+  - "sindy"
+  - "dynamical-systems"
+  - "stochastic-differential-equations"
+  - "time-series-forecasting"
+  - "cusum"
+  - "splines"
+  - "white-box"
+abstract: >-
+  Kinetopus Engine is a parsimonious, White-Box Scientific Machine Learning
+  (SciML) framework that discovers governing continuous ordinary and stochastic
+  differential equations directly from noisy financial and dynamic time series data
+  using FFT-driven C² Splines, CUSUM structural regime-shift detection, and SINDy.
