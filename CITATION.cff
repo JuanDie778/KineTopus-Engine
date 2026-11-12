@@ -6,6 +6,7 @@ authors:
     email: "ussaapontejuandiego@gmail.com"
 title: "Kinetopus Engine: A Parsimonious Physical-Mathematical Pipeline for Local-First Financial Time Series Forecasting using Sparse Identification of Dynamical Systems (SINDy)"
 version: "1.0.0"
+doi: "10.5281/zenodo.24166175"
 date-released: "2026-08-23"
 url: "https://github.com/JuanDie778/KineTopus-Engine"
 repository-code: "https://github.com/JuanDie778/KineTopus-Engine"

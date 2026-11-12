@@ -15,6 +15,7 @@ pinned: false
 > **¿Qué es?** Es una arquitecutra matematica que transforma el ruido caótico de las series temporales en leyes físicas continuas, descubriendo la ecuación que dicta su inercia
 
 [![Status: Research Preprint](https://img.shields.io/badge/Status-Research%20Preprint-blue)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7431018)
+[![DOI](https://zenodo.org/badge/1242321109.svg)](https://doi.org/10.5281/zenodo.24166175)
 [![SSRN Preprint](https://img.shields.io/badge/SSRN-Preprint%207431018-002D62.svg?logo=elsevier&logoColor=white)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7431018)
 [![ORCID](https://img.shields.io/badge/ORCID-0009--0008--9155--4653-A6CE39.svg?logo=orcid&logoColor=white)](https://orcid.org/0009-0008-9155-4653)
 ![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
